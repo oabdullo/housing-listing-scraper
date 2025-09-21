@@ -59,6 +59,8 @@ class Zillow56Scraper:
             url = f"{self.base_url}/search"
             
             # Build comprehensive search parameters
+            # Note: Removed year_built filters from API call since API doesn't support them
+            # Year filtering will be handled in post-processing
             params = {
                 'location': 'Plano, TX',  # Primary location
                 'home_type': 'Houses',    # Only houses
@@ -68,8 +70,6 @@ class Zillow56Scraper:
                 'min_bathrooms': FILTERS['bathrooms'],
                 'min_sqft': FILTERS['min_sqft'],
                 'max_sqft': FILTERS['max_sqft'],
-                'min_year_built': FILTERS['min_year_built'],
-                'max_year_built': FILTERS['max_year_built'],
                 'sort': 'newest',  # Get newest listings
                 'limit': 50  # Maximum results per request
             }
@@ -199,7 +199,8 @@ class Zillow56Scraper:
             if price < FILTERS['min_price'] or price > FILTERS['max_price']:
                 return False
             
-            # Year built filter
+            # Year built filter - only exclude if year is known and outside range
+            # If year is unknown (0), include the house since we can't determine if it meets criteria
             year_built = listing.get('year_built', 0)
             if year_built > 0 and (year_built < FILTERS['min_year_built'] or year_built > FILTERS['max_year_built']):
                 return False
