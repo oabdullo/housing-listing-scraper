@@ -22,12 +22,13 @@ jobs:
       run: |
         pip install -r requirements.txt
     
-    - name: Run hybrid house scraper
+    - name: Run Zillow Hybrid scraper
       env:
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
         GITHUB_ACTIONS: true
       run: |
-        python hybrid_scraper.py
+        python zillow_hybrid_scraper.py
     
     - name: Upload results
       uses: actions/upload-artifact@v4
