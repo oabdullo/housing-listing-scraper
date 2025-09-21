@@ -18,12 +18,6 @@ jobs:
       with:
         python-version: '3.9'
     
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y chromium-browser
-        sudo apt-get install -y chromium-chromedriver
-    
     - name: Install Python dependencies
       run: |
         pip install -r requirements.txt
@@ -31,20 +25,9 @@ jobs:
     - name: Run house scraper
       env:
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        GITHUB_ACTIONS: true
       run: |
-        python house_scraper.py
-    
-    - name: Run with email notification
-      env:
-        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-      run: |
-        python -c "
-        from house_scraper import HouseListingScraper
-        scraper = HouseListingScraper()
-        scraper.scrape_all_zip_codes()
-        scraper.send_email_notification()
-        scraper.close()
-        "
+        python github_actions_runner.py
     
     - name: Upload results
       uses: actions/upload-artifact@v4

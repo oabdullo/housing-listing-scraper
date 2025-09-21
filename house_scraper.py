@@ -49,10 +49,18 @@ class HouseListingScraper:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--disable-web-security")
+        chrome_options.add_argument("--disable-features=VizDisplayCompositor")
         chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+        chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
-        service = Service(ChromeDriverManager().install())
+        # For GitHub Actions, use the system Chrome
+        if os.getenv('GITHUB_ACTIONS'):
+            chrome_options.binary_location = "/usr/bin/google-chrome"
+            service = Service(ChromeDriverManager().install())
+        else:
+            service = Service(ChromeDriverManager().install())
+            
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
         self.wait = WebDriverWait(self.driver, 10)
     
