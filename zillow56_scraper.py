@@ -12,8 +12,10 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import time
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from config import ZIP_CODES, FILTERS, EMAIL_CONFIG
-from house_scraper import HouseListingScraper
 
 # Load environment variables
 load_dotenv()
@@ -252,6 +254,108 @@ class Zillow56Scraper:
         except Exception as e:
             logging.error(f"Error saving to CSV: {e}")
             return None
+    
+    def send_email_notification(self):
+        """Send email notification with listings (no Chrome required)"""
+        try:
+            if not self.listings:
+                logging.warning("No listings to send in email")
+                return
+            
+            # Get email password from environment
+            email_password = os.getenv('EMAIL_PASSWORD')
+            if not email_password:
+                logging.error("EMAIL_PASSWORD not found in environment variables")
+                return
+            
+            # Create email content
+            subject = f"🏠 Daily House Listings - {len(self.listings)} Houses Found"
+            
+            # Create HTML email body
+            html_body = self._create_email_html()
+            
+            # Create message
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = EMAIL_CONFIG['sender_email']
+            msg['To'] = EMAIL_CONFIG['recipient_email']
+            
+            # Attach HTML content
+            html_part = MIMEText(html_body, 'html')
+            msg.attach(html_part)
+            
+            # Send email
+            with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+                server.starttls()
+                server.login(EMAIL_CONFIG['sender_email'], email_password)
+                server.send_message(msg)
+            
+            logging.info(f"✅ Email sent successfully to {EMAIL_CONFIG['recipient_email']}")
+            
+        except Exception as e:
+            logging.error(f"Error sending email: {e}")
+    
+    def _create_email_html(self):
+        """Create HTML email content"""
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                .header {{ background-color: #f4f4f4; padding: 20px; border-radius: 5px; }}
+                .listing {{ border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }}
+                .price {{ font-size: 18px; font-weight: bold; color: #2c5aa0; }}
+                .address {{ font-size: 16px; color: #333; }}
+                .details {{ color: #666; margin: 5px 0; }}
+                .url {{ margin-top: 10px; }}
+                .url a {{ color: #2c5aa0; text-decoration: none; }}
+                .summary {{ background-color: #e8f4f8; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>🏠 Daily House Listings - Plano Area</h1>
+                <p>Found <strong>{len(self.listings)}</strong> houses matching your criteria</p>
+                <p>Search Criteria: ${FILTERS['min_price']:,} - ${FILTERS['max_price']:,}, {FILTERS['bedrooms']}+ beds, {FILTERS['bathrooms']}+ baths, {FILTERS['min_sqft']}+ sqft</p>
+            </div>
+        """
+        
+        for i, listing in enumerate(self.listings, 1):
+            price = f"${listing['price']:,.0f}"
+            address = listing['address']
+            bedrooms = listing['bedrooms']
+            bathrooms = listing['bathrooms']
+            sqft = f"{listing['sqft']:,.0f}" if listing['sqft'] > 0 else "N/A"
+            year_built = listing['year_built'] if listing['year_built'] > 0 else "N/A"
+            url = listing['url'] if listing['url'] != 'https://www.zillow.comN/A' else "N/A"
+            
+            html += f"""
+            <div class="listing">
+                <div class="price">{price}</div>
+                <div class="address">{address}</div>
+                <div class="details">
+                    <strong>Bedrooms:</strong> {bedrooms} | 
+                    <strong>Bathrooms:</strong> {bathrooms} | 
+                    <strong>Square Feet:</strong> {sqft} | 
+                    <strong>Year Built:</strong> {year_built}
+                </div>
+                <div class="url">
+                    <a href="{url}" target="_blank">View on Zillow →</a>
+                </div>
+            </div>
+            """
+        
+        html += """
+            <div class="summary">
+                <p><strong>Source:</strong> Zillow56 API via RapidAPI</p>
+                <p><strong>Generated:</strong> """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
 
 def main():
     """Main function to run the scraper"""
@@ -269,10 +373,8 @@ def main():
         # Save to CSV
         csv_file = scraper.save_to_csv()
         
-        # Send email notification
-        email_scraper = HouseListingScraper()
-        email_scraper.listings = listings
-        email_scraper.send_email_notification()
+        # Send email notification (no Chrome required)
+        scraper.send_email_notification()
         
         logging.info(f"Zillow56 scraping completed successfully! Found {len(listings)} houses")
         
