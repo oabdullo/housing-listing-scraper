@@ -161,10 +161,12 @@ class Zillow56Scraper:
             sqft = item.get('livingArea', item.get('squareFeet', item.get('sqft', 0)))
             year_built = item.get('yearBuilt', item.get('yearBuilt', 0))
             
-            # URL
-            url = item.get('url', item.get('detailUrl', item.get('hdpUrl', 'N/A')))
-            if url and not url.startswith('http'):
-                url = f"https://www.zillow.com{url}"
+            # URL - construct from zpid since API doesn't provide direct URL
+            zpid = item.get('zpid')
+            if zpid:
+                url = f"https://www.zillow.com/homedetails/{zpid}_zpid/"
+            else:
+                url = "N/A"
             
             # Zestimate
             zestimate = item.get('zestimate', item.get('estimatedValue', 0))
@@ -328,7 +330,7 @@ class Zillow56Scraper:
             bathrooms = listing['bathrooms']
             sqft = f"{listing['sqft']:,.0f}" if listing['sqft'] > 0 else "N/A"
             year_built = listing['year_built'] if listing['year_built'] > 0 else "N/A"
-            url = listing['url'] if listing['url'] != 'https://www.zillow.comN/A' else "N/A"
+            url = listing['url'] if listing['url'] != 'N/A' else "N/A"
             
             html += f"""
             <div class="listing">
