@@ -1,0 +1,56 @@
+name: Daily House Scraper
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # Runs daily at 8:00 AM UTC (adjust timezone as needed)
+  workflow_dispatch:  # Allows manual runs from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser
+        sudo apt-get install -y chromium-chromedriver
+    
+    - name: Install Python dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Run house scraper
+      env:
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      run: |
+        python house_scraper.py
+    
+    - name: Run with email notification
+      env:
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      run: |
+        python -c "
+        from house_scraper import HouseListingScraper
+        scraper = HouseListingScraper()
+        scraper.scrape_all_zip_codes()
+        scraper.send_email_notification()
+        scraper.close()
+        "
+    
+    - name: Upload results
+      uses: actions/upload-artifact@v3
+      with:
+        name: house-listings-${{ github.run_number }}
+        path: house_listings_*.csv
+        retention-days: 30
+
+
