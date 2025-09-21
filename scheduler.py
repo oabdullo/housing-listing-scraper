@@ -7,7 +7,7 @@ import schedule
 import time
 import logging
 from datetime import datetime
-from house_scraper import HouseListingScraper
+from zillow56_scraper import Zillow56Scraper
 from config import SCHEDULE_TIME, OUTPUT_FILE, LOG_FILE
 import os
 import smtplib
@@ -48,10 +48,10 @@ class HouseListingScheduler:
         
         try:
             # Initialize scraper
-            self.scraper = HouseListingScraper()
+            self.scraper = Zillow56Scraper()
             
             # Run the scrape
-            self.scraper.scrape_all_zip_codes()
+            listings = self.scraper.search_plano_houses()
             
             # Save results
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
