@@ -1,0 +1,115 @@
+name: Dual House Scraper (Plano TX + Warwick NY)
+
+on:
+  schedule:
+    - cron: '0 14 * * *'  # Runs daily at 8:00 AM CST (UTC-6) for Plano
+    - cron: '0 15 * * *'  # Runs daily at 9:00 AM CST (UTC-6) for Warwick
+  workflow_dispatch:  # Allows manual runs from GitHub UI
+    inputs:
+      scraper_type:
+        description: 'Which scraper to run'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+        - both
+        - plano
+        - warwick
+
+jobs:
+  plano-scraper:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.scraper_type == 'both' || github.event.inputs.scraper_type == 'plano'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: main  # Use main branch for Plano scraper
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Install Python dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Run Plano TX scraper
+      env:
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        GITHUB_ACTIONS: true
+      run: |
+        python zillow56_scraper.py
+    
+    - name: Upload Plano results
+      uses: actions/upload-artifact@v4
+      with:
+        name: plano-listings-${{ github.run_number }}
+        path: house_listings_*.csv
+        retention-days: 30
+
+  warwick-scraper:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.scraper_type == 'both' || github.event.inputs.scraper_type == 'warwick'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: warwick-ny-scraper  # Use warwick-ny-scraper branch
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Install Python dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Run Warwick NY scraper
+      env:
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        GITHUB_ACTIONS: true
+      run: |
+        python zillow56_scraper.py
+    
+    - name: Upload Warwick results
+      uses: actions/upload-artifact@v4
+      with:
+        name: warwick-listings-${{ github.run_number }}
+        path: house_listings_*.csv
+        retention-days: 30
+
+  test-scrapers:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.scraper_type == 'both'
+    needs: [plano-scraper, warwick-scraper]
+    
+    steps:
+    - name: Download Plano results
+      uses: actions/download-artifact@v4
+      with:
+        name: plano-listings-${{ github.run_number }}
+        path: ./plano-results
+    
+    - name: Download Warwick results
+      uses: actions/download-artifact@v4
+      with:
+        name: warwick-listings-${{ github.run_number }}
+        path: ./warwick-results
+    
+    - name: Display results summary
+      run: |
+        echo "=== Plano TX Results ==="
+        ls -la ./plano-results/ || echo "No Plano results found"
+        echo ""
+        echo "=== Warwick NY Results ==="
+        ls -la ./warwick-results/ || echo "No Warwick results found"
+        echo ""
+        echo "=== Summary ==="
+        echo "Both scrapers completed successfully!"
