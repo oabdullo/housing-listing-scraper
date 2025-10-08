@@ -332,8 +332,9 @@ class Zillow56Scraper:
         </head>
         <body>
             <div class="header">
-                <h1>🏠 Daily House Listings - Warwick, NY</h1>
+                <h1>🏠 Daily House Listings - Warwick, NY Area</h1>
                 <p>Found <strong>{len(self.listings)}</strong> houses matching your criteria</p>
+                <p>Search Area: Warwick, Chester, Florida, Goshen, Greenwood Lake, Monroe, New Hampton, Pine Island, Tuxedo Park</p>
                 <p>Search Criteria: ${FILTERS['min_price']:,} - ${FILTERS['max_price']:,}, {FILTERS['bedrooms']}+ beds, {FILTERS['bathrooms']}+ baths, {FILTERS['min_sqft']}+ sqft</p>
             </div>
         """
@@ -390,8 +391,8 @@ def main():
         # Save to CSV
         csv_file = scraper.save_to_csv()
         
-        # Send email notification (no Chrome required)
-        scraper.send_email_notification()
+        # Send email notification to both recipients
+        scraper.send_email_notification(test_mode=False)
         
         logging.info(f"Zillow56 scraping completed successfully! Found {len(listings)} houses")
         

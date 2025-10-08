@@ -6,6 +6,14 @@ Modify the values below to customize your search criteria
 # Zip codes to search (add your desired zip codes here)
 ZIP_CODES = [
     "10990",  # Warwick, NY
+    "10918",  # Chester, NY
+    "10921",  # Florida, NY
+    "10924",  # Goshen, NY
+    "10925",  # Greenwood Lake, NY
+    "10950",  # Monroe, NY
+    "10958",  # New Hampton, NY
+    "10969",  # Pine Island, NY
+    "10987",  # Tuxedo Park, NY
 ]
 
 # Search filters

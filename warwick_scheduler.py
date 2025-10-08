@@ -46,8 +46,8 @@ class WarwickHouseListingScheduler:
             filename = f"warwick_listings_{timestamp}.csv"
             self.scraper.save_to_csv(filename)
             
-            # Send notification email (in test mode by default)
-            self.scraper.send_email_notification(test_mode=True)
+            # Send notification email to both recipients
+            self.scraper.send_email_notification(test_mode=False)
             
             logger.info(f"Warwick NY scrape completed successfully. Found {len(self.scraper.listings)} listings.")
             
