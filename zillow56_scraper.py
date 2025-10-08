@@ -45,24 +45,24 @@ class Zillow56Scraper:
         if not self.api_key:
             raise ValueError("RAPIDAPI_KEY not found in environment variables")
     
-    def search_plano_houses(self):
+    def search_warwick_houses(self):
         """
-        Single optimized search for Plano area houses
+        Single optimized search for Warwick, NY area houses
         Combines all zip codes into one comprehensive search
         """
-        logging.info("Starting single Zillow56 search for Plano area houses")
+        logging.info("Starting single Zillow56 search for Warwick, NY area houses")
         
         try:
-            # Create a comprehensive search query for Plano area
-            # Using the main Plano zip code (75024) as the primary search
-            # This should capture houses in the broader Plano area
+            # Create a comprehensive search query for Warwick, NY area
+            # Using the main Warwick zip code (10990) as the primary search
+            # This should capture houses in the broader Warwick area
             url = f"{self.base_url}/search"
             
             # Build comprehensive search parameters
             # Note: Removed year_built filters from API call since API doesn't support them
             # Year filtering will be handled in post-processing
             params = {
-                'location': 'Plano, TX',  # Primary location
+                'location': 'Warwick, NY',  # Primary location
                 'home_type': 'Houses',    # Only houses
                 'min_price': FILTERS['min_price'],
                 'max_price': FILTERS['max_price'],
@@ -146,9 +146,9 @@ class Zillow56Scraper:
         try:
             # Extract basic information
             address = item.get('address', item.get('streetAddress', 'N/A'))
-            city = item.get('city', 'Plano')
-            state = item.get('state', 'TX')
-            zip_code = item.get('zipCode', item.get('zipcode', '75024'))
+            city = item.get('city', 'Warwick')
+            state = item.get('state', 'NY')
+            zip_code = item.get('zipCode', item.get('zipcode', '10990'))
             
             # Price information
             price = item.get('price', item.get('listPrice', 0))
@@ -258,7 +258,7 @@ class Zillow56Scraper:
             logging.error(f"Error saving to CSV: {e}")
             return None
     
-    def send_email_notification(self):
+    def send_email_notification(self, test_mode=True):
         """Send email notification with listings (no Chrome required)"""
         try:
             if not self.listings:
@@ -271,32 +271,46 @@ class Zillow56Scraper:
                 logging.error("EMAIL_PASSWORD not found in environment variables")
                 return
             
+            # Choose recipients based on test mode
+            if test_mode:
+                recipients = [EMAIL_CONFIG['test_recipient']]
+                logging.info(f"🧪 TEST MODE: Sending to {recipients[0]} only")
+            else:
+                recipients = EMAIL_CONFIG['recipient_emails']
+                logging.info(f"📧 PRODUCTION MODE: Sending to {len(recipients)} recipients")
+            
             # Create email content
-            subject = f"🏠 Daily House Listings - {len(self.listings)} Houses Found"
+            subject = f"🏠 Daily House Listings - Warwick, NY - {len(self.listings)} Houses Found"
             
             # Create HTML email body
             html_body = self._create_email_html()
             
-            # Create message
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = EMAIL_CONFIG['sender_email']
-            msg['To'] = EMAIL_CONFIG['recipient_email']
-            
-            # Attach HTML content
-            html_part = MIMEText(html_body, 'html')
-            msg.attach(html_part)
-            
-            # Send email
-            with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
-                server.starttls()
-                server.login(EMAIL_CONFIG['sender_email'], email_password)
-                server.send_message(msg)
-            
-            logging.info(f"✅ Email sent successfully to {EMAIL_CONFIG['recipient_email']}")
+            # Send to each recipient
+            for recipient in recipients:
+                try:
+                    # Create message
+                    msg = MIMEMultipart('alternative')
+                    msg['Subject'] = subject
+                    msg['From'] = EMAIL_CONFIG['sender_email']
+                    msg['To'] = recipient
+                    
+                    # Attach HTML content
+                    html_part = MIMEText(html_body, 'html')
+                    msg.attach(html_part)
+                    
+                    # Send email
+                    with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+                        server.starttls()
+                        server.login(EMAIL_CONFIG['sender_email'], email_password)
+                        server.send_message(msg)
+                    
+                    logging.info(f"✅ Email sent successfully to {recipient}")
+                    
+                except Exception as e:
+                    logging.error(f"Error sending email to {recipient}: {e}")
             
         except Exception as e:
-            logging.error(f"Error sending email: {e}")
+            logging.error(f"Error in send_email_notification: {e}")
     
     def _create_email_html(self):
         """Create HTML email content"""
@@ -318,7 +332,7 @@ class Zillow56Scraper:
         </head>
         <body>
             <div class="header">
-                <h1>🏠 Daily House Listings - Plano Area</h1>
+                <h1>🏠 Daily House Listings - Warwick, NY</h1>
                 <p>Found <strong>{len(self.listings)}</strong> houses matching your criteria</p>
                 <p>Search Criteria: ${FILTERS['min_price']:,} - ${FILTERS['max_price']:,}, {FILTERS['bedrooms']}+ beds, {FILTERS['bathrooms']}+ baths, {FILTERS['min_sqft']}+ sqft</p>
             </div>
@@ -367,7 +381,7 @@ def main():
         scraper = Zillow56Scraper()
         
         # Make single optimized search
-        listings = scraper.search_plano_houses()
+        listings = scraper.search_warwick_houses()
         
         if not listings:
             logging.warning("No listings found matching criteria")

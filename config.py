@@ -5,11 +5,7 @@ Modify the values below to customize your search criteria
 
 # Zip codes to search (add your desired zip codes here)
 ZIP_CODES = [
-    "75024",  # Plano, TX
-    "75023",  # Frisco, TX
-    "75074",  # Allen, TX
-    "75093",  # Plano, TX
-    "75056",  # Frisco, TX
+    "10990",  # Warwick, NY
 ]
 
 # Search filters
@@ -18,11 +14,11 @@ FILTERS = {
     "max_price": 405000,      # Maximum price
     "min_year_built": 1980,   # Minimum year built
     "max_year_built": 2020,   # Maximum year built
-    "min_sqft": 1400,         # Minimum square footage
+    "min_sqft": 1300,         # Minimum square footage
     "max_sqft": 5000,         # Maximum square footage
     "bedrooms": 2,            # Minimum bedrooms
     "bathrooms": 1,           # Minimum bathrooms
-    "property_type": "house", # Property type (house, townhouse, condo, etc.)
+    "property_type": ["house", "townhouse", "condo", "apartment"], # Property type (house, townhouse, condo, etc.)
 }
 
 # Job scheduling
@@ -41,6 +37,10 @@ EMAIL_CONFIG = {
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
     "sender_email": "omoabdullo@gmail.com",
-    "recipient_email": "omoabdullo@gmail.com",
+    "recipient_emails": [
+        "Brett.davidson5@outlook.com",
+        "alexamariefini820@gmail.com"
+    ],
+    "test_recipient": "Brett.davidson5@outlook.com",  # For testing with one email
     "password": "",  # Set via environment variable EMAIL_PASSWORD
 }
